@@ -48,7 +48,9 @@ class Block_Controller(object):
         strategy = None
         LatestEvalValue = -100000
         # search with current block Shape
+        # CurrentShapeDirectionRange：そのブロックが回転によって形が変わる回数(回転が必要な数)
         for direction0 in CurrentShapeDirectionRange:
+            print("<-----------BLOCK direction--------->",direction0)
             # search with x range
             x0Min, x0Max = self.getSearchXRange(self.CurrentShape_class, direction0)
             for x0 in range(x0Min, x0Max):
@@ -56,6 +58,7 @@ class Block_Controller(object):
                 board = self.getBoard(self.board_backboard, self.CurrentShape_class, direction0, x0)
 
                 # evaluate board
+                # ここでどれが一番点数が高いか評価を実施する
                 EvalValue = self.calcEvaluationValueSample(board)
                 # update best move
                 if EvalValue > LatestEvalValue:
@@ -82,6 +85,7 @@ class Block_Controller(object):
         print("###### SAMPLE CODE ######")
         return nextMove
 
+        
     def getSearchXRange(self, Shape_class, direction):
         #
         # get x range from shape direction.
@@ -89,6 +93,7 @@ class Block_Controller(object):
         minX, maxX, _, _ = Shape_class.getBoundingOffsets(direction) # get shape x offsets[minX,maxX] as relative value.
         xMin = -1 * minX
         xMax = self.board_data_width - maxX
+        #print("-----------------xMin = ",xMin,"xMax = ",xMax)
         return xMin, xMax
 
     def getShapeCoordArray(self, Shape_class, direction, x, y):
@@ -143,6 +148,8 @@ class Block_Controller(object):
         #
         width = self.board_data_width
         height = self.board_data_height
+
+        #print("width = ",width, "height =",height)
 
         # evaluation paramters
         ## lines to be removed
@@ -203,7 +210,8 @@ class Block_Controller(object):
         #### maxDy
         #maxDy = max(BlockMaxY) - min(BlockMaxY)
         #### maxHeight
-        #maxHeight = max(BlockMaxY) - fullLines
+        maxHeight = max(BlockMaxY) - fullLines
+        print("maxHeight =" , maxHeight)
 
         ## statistical data
         #### stdY
@@ -220,16 +228,38 @@ class Block_Controller(object):
 
         # calc Evaluation Value
         score = 0
-        score = score + fullLines * 10.0           # try to delete line 
-        score = score - nHoles * 1.0               # try not to make hole
-        score = score - nIsolatedBlocks * 1.0      # try not to make isolated block
-        score = score - absDy * 1.0                # try to put block smoothly
+#高さを考慮しないとずっと積んでしまうのでどこかでパラメータ調整が必要になる
+
+        if fullLines < 3 :
+            score = score - fullLines *5.0
+            score = score - nHoles * 10.0               # try not to make hole
+            score = score - nIsolatedBlocks * 1.0      # try not to make isolated block
+            score = score - absDy * 1.0                # try to put block smoothly
+  
+        if fullLines >= 3 :
+            score = score + fullLines * 10.0
+            score = score - nHoles * 10.0               # try not to make hole
+            score = score - nIsolatedBlocks * 1.0      # try not to make isolated block
+            score = score - absDy * 1.0                # try to put block smoothly
+            
+        if maxHeight > 15 :
+            score = score + fullLines * 10.0
+            score = score + fullLines * 10.0
+            score = score - nHoles * 10.0               # try not to make hole
+            score = score - nIsolatedBlocks * 1.0      # try not to make isolated block
+            score = score - absDy * 1.0                # try to put block smoothly
+
+        #score = score + fullLines * 10.0           # try to delete line 
+        #score = score - nHoles * 10.0               # try not to make hole
+        #score = score - nIsolatedBlocks * 1.0      # try not to make isolated block
+        #score = score - absDy * 1.0                # try to put block smoothly
         #score = score - maxDy * 0.3                # maxDy
-        #score = score - maxHeight * 5              # maxHeight
+        score = score - maxHeight * 5              # maxHeight
         #score = score - stdY * 1.0                 # statistical data
         #score = score - stdDY * 0.01               # statistical data
 
-        # print(score, fullLines, nHoles, nIsolatedBlocks, maxHeight, stdY, stdDY, absDy, BlockMaxY)
+        print(score, fullLines, nHoles, nIsolatedBlocks, absDy, BlockMaxY)
+        #print(score, fullLines, nHoles, nIsolatedBlocks, maxHeight, stdY, stdDY, absDy, BlockMaxY)
         return score
 
 
