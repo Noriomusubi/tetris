@@ -231,20 +231,19 @@ class Block_Controller(object):
 #高さを考慮しないとずっと積んでしまうのでどこかでパラメータ調整が必要になる
 
         if fullLines < 3 :
-            score = score - fullLines *5.0
+            score = score - fullLines * 5.0
             score = score - nHoles * 10.0               # try not to make hole
             score = score - nIsolatedBlocks * 1.0      # try not to make isolated block
             score = score - absDy * 1.0                # try to put block smoothly
   
         if fullLines >= 3 :
-            score = score + fullLines * 10.0
+            score = score + fullLines * 20.0
             score = score - nHoles * 10.0               # try not to make hole
             score = score - nIsolatedBlocks * 1.0      # try not to make isolated block
             score = score - absDy * 1.0                # try to put block smoothly
             
         if maxHeight > 15 :
-            score = score + fullLines * 10.0
-            score = score + fullLines * 10.0
+            score = score + fullLines * 20.0
             score = score - nHoles * 10.0               # try not to make hole
             score = score - nIsolatedBlocks * 1.0      # try not to make isolated block
             score = score - absDy * 1.0                # try to put block smoothly
@@ -254,7 +253,7 @@ class Block_Controller(object):
         #score = score - nIsolatedBlocks * 1.0      # try not to make isolated block
         #score = score - absDy * 1.0                # try to put block smoothly
         #score = score - maxDy * 0.3                # maxDy
-        score = score - maxHeight * 5              # maxHeight
+        score = score - maxHeight * 5.0              # maxHeight
         #score = score - stdY * 1.0                 # statistical data
         #score = score - stdDY * 0.01               # statistical data
 
