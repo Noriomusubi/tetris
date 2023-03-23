@@ -329,7 +329,7 @@ class Game_Manager(QMainWindow):
                     # art
                     # print GameStatus
                     import pprint
-                    print("=================================================>")
+                    #print("=================================================>")
                     #pprint.pprint(GameStatus, width = 61, compact = True)
                     # get direction/x/y from art_config
                     d,x,y = BOARD_DATA.getnextShapeIndexListDXY(self.block_index-1)

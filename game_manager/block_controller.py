@@ -28,8 +28,8 @@ class Block_Controller(object):
         t1 = datetime.now()
 
         # print GameStatus
-        print("=================================================>")
-        pprint.pprint(GameStatus, width = 61, compact = True)
+        #print("=================================================>")
+        #pprint.pprint(GameStatus, width = 61, compact = True)
 
         # get data from GameStatus
         # current shape info
@@ -46,26 +46,30 @@ class Block_Controller(object):
         self.ShapeNone_index = GameStatus["debug_info"]["shape_info"]["shapeNone"]["index"]
 
         # search best nextMove -->
-        strategy = None
-        LatestEvalValue = -100000
+        #CurrentLatestEvalValue = -100000
         # search with current block Shape
         # CurrentShapeDirectionRange：そのブロックが回転によって形が変わる回数(回転が必要な数)
-        for direction0 in CurrentShapeDirectionRange:
-            print("<-----------BLOCK direction--------->",direction0)
+        #self.currentShape
+
+        CurrentLatestEvalValue, direction0, x0 = self.calcEvaluationPre(GameStatus, 0)
+
+        #for direction0 in CurrentShapeDirectionRange:
+        #    print("<-----------BLOCK direction--------->",direction0,"CurrentShape_class=")
             # search with x range
-            x0Min, x0Max = self.getSearchXRange(self.CurrentShape_class, direction0)
-            for x0 in range(x0Min, x0Max):
+        #    x0Min, x0Max = self.getSearchXRange(self.CurrentShape_class, direction0)
+        #    for x0 in range(x0Min, x0Max):
                 # get board data, as if dropdown block
-                board = self.getBoard(self.board_backboard, self.CurrentShape_class, direction0, x0)
+        #        board = self.getBoard(self.board_backboard, self.CurrentShape_class, direction0, x0)
 
                 # evaluate board
                 # ここでどれが一番点数が高いか評価を実施する
-                EvalValue = self.calcEvaluationValueSample(board)
+        #        EvalValue = self.calcEvaluationValueSample(board)
                 # update best move
-                if EvalValue > LatestEvalValue:
-                    strategy = (direction0, x0, 1, 1)
-                    LatestEvalValue = EvalValue
-
+        #        if EvalValue > LatestEvalValue:
+        #            print("EvalValue = ", EvalValue, "LatestEvalValue", LatestEvalValue)
+        #            strategy = (direction0, x0, 1, 1, 'n')
+        #            LatestEvalValue = EvalValue
+                
                 ###test
                 ###for direction1 in NextShapeDirectionRange:
                 ###  x1Min, x1Max = self.getSearchXRange(self.NextShape_class, direction1)
@@ -77,13 +81,33 @@ class Block_Controller(object):
                 ###            LatestEvalValue = EvalValue
         # search best nextMove <--
 
-        print("===", datetime.now() - t1)
+        ##print("===", datetime.now() - t1)
+
+        #とりあえず1発目holdする
+        if GameStatus["block_info"]["holdShape"]["index"] == None:
+            #print("USE HOLD MODE!!")
+            strategy = (0,0,1,1,'y')
+        else :
+            #print("evaluate Hold")
+            HoldLatesEvalValue, direction_hold, x_hold = self.calcEvaluationPre(GameStatus, 1)
+            #print("hold strategy", strategy_hold)
+
+            if HoldLatesEvalValue > CurrentLatestEvalValue :
+                #print("============HOLD WIN==========")
+                strategy = (direction_hold, x_hold, 1, 1, 'y')
+            else :
+                #print("============CURRENT WIN==========")
+                strategy = (direction0, x0, 1, 1, 'n')
+
+        #    LatestEvalValue, strategy = self.calcEvaluationPre(GameStatus)
+
         nextMove["strategy"]["direction"] = strategy[0]
         nextMove["strategy"]["x"] = strategy[1]
         nextMove["strategy"]["y_operation"] = strategy[2]
         nextMove["strategy"]["y_moveblocknum"] = strategy[3]
-        print(nextMove)
-        print("###### SAMPLE CODE ######")
+        nextMove["strategy"]["use_hold_function"] = strategy[4]
+        ##print(nextMove)
+        #print("###### SAMPLE CODE ######")
         return nextMove
 
         
@@ -142,6 +166,47 @@ class Block_Controller(object):
         for _x, _y in coordArray:
             _board[(_y + dy) * self.board_data_width + _x] = Shape_class.shape
         return _board
+    
+    def calcEvaluationPre(self, GameStatus, flag):
+        strategy = None
+        LatestEvalValue = -100000
+        # get data from GameStatus
+        # current shape info
+        if flag == 1:
+            ShapeDirectionRange = GameStatus["block_info"]["holdShape"]["direction_range"]
+            self.Shape_class = GameStatus["block_info"]["holdShape"]["class"]
+        else :
+            ShapeDirectionRange = GameStatus["block_info"]["currentShape"]["direction_range"]
+            self.Shape_class = GameStatus["block_info"]["currentShape"]["class"]
+            #print("PASSSSSSSSSS!!")
+        # next shape info
+        NextShapeDirectionRange = GameStatus["block_info"]["nextShape"]["direction_range"]
+        self.NextShape_class = GameStatus["block_info"]["nextShape"]["class"]
+        # current board info
+        self.board_backboard = GameStatus["field_info"]["backboard"]
+        # default board definition
+        self.board_data_width = GameStatus["field_info"]["width"]
+        self.board_data_height = GameStatus["field_info"]["height"]
+        self.ShapeNone_index = GameStatus["debug_info"]["shape_info"]["shapeNone"]["index"]
+
+        for direction0 in ShapeDirectionRange:
+            # print("<-----------BLOCK direction--------->",direction0,"CurrentShape_class=")
+            # search with x range
+            x0Min, x0Max = self.getSearchXRange(self.Shape_class, direction0)
+            for x0 in range(x0Min, x0Max):
+                # get board data, as if dropdown block
+                board = self.getBoard(self.board_backboard, self.Shape_class, direction0, x0)
+                EvalValue = self.calcEvaluationValueSample(board)
+                # update best move
+                if EvalValue > LatestEvalValue:
+                    #print("EvalValue = ", EvalValue, "LatestEvalValue", LatestEvalValue)
+                    directionx = direction0
+                    x = x0
+                    #strategy = (direction0, x0, 1, 1, 'n')
+                    LatestEvalValue = EvalValue
+                
+        return LatestEvalValue, directionx, x
+
 
     def calcEvaluationValueSample(self, board):
         #
@@ -212,7 +277,7 @@ class Block_Controller(object):
         #maxDy = max(BlockMaxY) - min(BlockMaxY)
         #### maxHeight
         maxHeight = max(BlockMaxY) - fullLines
-        print("maxHeight =" , maxHeight)
+        #print("maxHeight =" , maxHeight)
 
         ## statistical data
         #### stdY
@@ -229,36 +294,38 @@ class Block_Controller(object):
 
         # calc Evaluation Value
         score = 0
-#高さを考慮しないとずっと積んでしまうのでどこかでパラメータ調整が必要になる
+        #高さを考慮しないとずっと積んでしまうのでどこかでパラメータ調整が必要になる
 
         if fullLines < 3 :
             score = score - fullLines * 5.0
-            score = score - nHoles * 10.0               # try not to make hole
+            score = score - nHoles * 15.0               # try not to make hole
             score = score - nIsolatedBlocks * 1.0      # try not to make isolated block
             score = score - absDy * 1.0                # try to put block smoothly
   
         if fullLines >= 3 :
             score = score + fullLines * 20.0
-            score = score - nHoles * 10.0               # try not to make hole
+            score = score - nHoles * 1.0               # try not to make hole
             score = score - nIsolatedBlocks * 1.0      # try not to make isolated block
             score = score - absDy * 1.0                # try to put block smoothly
-            
+
         if maxHeight > 15 :
             score = score + fullLines * 20.0
             score = score - nHoles * 10.0               # try not to make hole
             score = score - nIsolatedBlocks * 1.0      # try not to make isolated block
             score = score - absDy * 1.0                # try to put block smoothly
+            score = score - maxHeight * 10.0              # maxHeight
 
         #score = score + fullLines * 10.0           # try to delete line 
         #score = score - nHoles * 10.0               # try not to make hole
         #score = score - nIsolatedBlocks * 1.0      # try not to make isolated block
         #score = score - absDy * 1.0                # try to put block smoothly
         #score = score - maxDy * 0.3                # maxDy
-        score = score - maxHeight * 5.0              # maxHeight
+        #score = score - maxHeight * 5.0              # maxHeight
         #score = score - stdY * 1.0                 # statistical data
         #score = score - stdDY * 0.01               # statistical data
 
-        print(score, fullLines, nHoles, nIsolatedBlocks, absDy, BlockMaxY)
+        #print("*********",score, fullLines, nHoles, BlockMaxY)
+        #print("*********",score, fullLines, nHoles, nIsolatedBlocks, absDy, BlockMaxY)
         #print(score, fullLines, nHoles, nIsolatedBlocks, maxHeight, stdY, stdDY, absDy, BlockMaxY)
         return score
 

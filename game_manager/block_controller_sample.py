@@ -27,8 +27,8 @@ class Block_Controller(object):
         t1 = datetime.now()
 
         # print GameStatus
-        print("=================================================>")
-        pprint.pprint(GameStatus, width = 61, compact = True)
+        #print("=================================================>")
+        #pprint.pprint(GameStatus, width = 61, compact = True)
 
         # get data from GameStatus
         # current shape info
